@@ -13,6 +13,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+    "github.com/yuin/goldmark-meta"
 )
 
 func init() {
@@ -60,36 +63,54 @@ func getFiles(dir, ext string) ([]string, error) {
     return files, nil
 }
 
-func parseContent() (map[string]string, error) {
+type content struct {
+    meta map[string]interface{}
+    html template.HTML
+}
+
+func parseContent() (map[string]content, error) {
     files, err := getFiles(viper.GetString("ContentDir"), ".md")
     if err != nil {
         return nil, err
     }
 
-    contents := make(map[string]string, len(files))
+    contents := make(map[string]content, len(files))
     for _, file := range files {
         filename := strings.Split(file, ".")[0]
         if _, ok := contents[filename]; !ok {
-            content, err := os.ReadFile(
+            out, err := os.ReadFile(
                 fmt.Sprintf("%s/%s", viper.GetString("ContentDir"), file),
             )
             if err != nil {
                 return nil, err
             }
 
+            markdown := goldmark.New(
+                goldmark.WithExtensions(
+                    extension.GFM,
+                    meta.Meta,
+                ),
+                goldmark.WithParserOptions(parser.WithAutoHeadingID()),
+            )
+
             var buf bytes.Buffer
-            if err := goldmark.Convert(content, &buf); err != nil {
+            ctx := parser.NewContext()
+            err = markdown.Convert(out, &buf, parser.WithContext(ctx))
+            if err != nil {
                 return nil, err
             }
 
-            contents[filename] = buf.String()
+            contents[filename] = content{
+                meta: meta.Get(ctx),
+                html: template.HTML(buf.String()),
+            }
         }
     }
 
     return contents, nil
 }
 
-func parseLayout(contents map[string]string) (map[string]string, error) {
+func parseLayout(contents map[string]content) (map[string]string, error) {
     files, err := getFiles(viper.GetString("LayoutDir"), ".tmpl")
     if err != nil {
         return nil, err
@@ -117,8 +138,9 @@ func parseLayout(contents map[string]string) (map[string]string, error) {
             var buf bytes.Buffer
             if err := tmpl.Execute(
                 &buf, 
-                map[string]template.HTML{
-                    "content": template.HTML(contents[filename]),
+                map[string]interface{}{
+                    "meta": contents[filename].meta,
+                    "html": contents[filename].html,
                 },
             ); err != nil {
                 return nil, err
