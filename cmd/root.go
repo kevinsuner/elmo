@@ -11,7 +11,9 @@ import (
 func init() {
     viper.SetDefault("ContentDir", "content")
     viper.SetDefault("LayoutDir", "layout")
+    viper.SetDefault("PartialDir", "partials")
     viper.SetDefault("PublicDir", "public")
+    viper.SetDefault("PostDir", "posts")
 }
 
 var rootCmd = &cobra.Command{
