@@ -28,48 +28,16 @@ var generateCmd = &cobra.Command{
     Run: generate,
 }
 
-func createPublicDir() error {
-    _, err := os.Stat(viper.GetString("PublicDir"))
+func createDir(path string) error {
+    _, err := os.Stat(path)
     switch {
-    case os.IsNotExist(err):
-        return os.Mkdir(viper.GetString("PublicDir"), os.ModePerm)
     case os.IsExist(err):
-        return os.Remove(viper.GetString("PublicDir"))
-    default:
-        return err
-    }
-}
-
-func createPostsDir() error {
-    _, err := os.Stat(
-        fmt.Sprintf(
-            "%s/%s",
-            viper.GetString("PublicDir"),
-            viper.GetString("PostDir"),
-        ), 
-    )
-
-    switch {
+        return os.RemoveAll(path)
     case os.IsNotExist(err):
-        return os.Mkdir(
-            fmt.Sprintf(
-                "%s/%s",
-                viper.GetString("PublicDir"),
-                viper.GetString("PostDir"),
-            ),
-            os.ModePerm,
-        )
-    case os.IsExist(err):
-        return os.Remove(
-            fmt.Sprintf(
-                "%s/%s",
-                viper.GetString("PublicDir"),
-                viper.GetString("PostDir"),
-            ),
-        )
-    default:
-        return err
+        return os.MkdirAll(path, os.ModePerm)
     }
+
+    return err
 }
 
 type fileInfo struct {
@@ -329,7 +297,10 @@ func generatePosts(posts map[string]string) error {
 }
 
 func generate(cmd *cobra.Command, args []string) {
-    if err := createPublicDir(); err != nil {
+    if err := createDir(fmt.Sprintf("%s/%s",
+        viper.GetString("PublicDir"),
+        viper.GetString("PostDir"),
+    )); err != nil {
         fmt.Println(err.Error())
         os.Exit(1)
     }
@@ -360,11 +331,6 @@ func generate(cmd *cobra.Command, args []string) {
     }
 
     if len(posts) > 0 {
-        if err := createPostsDir(); err != nil {
-            fmt.Println(err.Error())
-            os.Exit(1)
-        }
-
         if err := generatePosts(posts); err != nil {
             fmt.Println(err.Error())
             os.Exit(1)
