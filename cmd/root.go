@@ -2,13 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/spf13/cobra"
-    "github.com/spf13/viper"
+	"github.com/spf13/viper"
 )
 
 func init() {
+    viper.SetDefault("Language", "en")
     viper.SetDefault("ContentDir", "content")
     viper.SetDefault("PublicDir", "public")
     viper.SetDefault("ThemesDir", "themes")
@@ -32,6 +34,18 @@ func init() {
     viper.SetDefault(
         "ContentPostsDir",
         fmt.Sprintf("%s/posts", viper.GetString("ContentDir")),
+    )
+
+    viper.SetDefault("LogLevel", slog.LevelInfo)
+    viper.Set("Logger", 
+        slog.New(
+            slog.NewTextHandler(
+                os.Stderr,
+                &slog.HandlerOptions{
+                    Level: viper.Get("LogLevel").(slog.Level),
+                },
+            ),
+        ),
     )
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -144,8 +145,13 @@ func getPosts() ([]post, error) {
     for _, file := range files {
         if !file.IsDir() {
             filename := strings.Split(file.Name(), ".")[0]
+            lang, err := language.Parse(viper.GetString("Language"))
+            if err != nil {
+                return nil, err
+            }
+
             posts = append(posts, post{
-                Title: cases.Title(language.English).String(
+                Title: cases.Title(lang).String(
                     strings.ReplaceAll(filename, "-", " "),
                 ),
                 Slug: filename,
@@ -276,38 +282,39 @@ func createFiles(templates map[string]tpl) error {
 }
 
 func generate(cmd *cobra.Command, args []string) {
+    logger := viper.Get("Logger").(*slog.Logger)
     if err := createDir(viper.GetString("PublicPostsDir")); err != nil {
-        fmt.Println(err.Error())
+        logger.Error("createDir", "error", err.Error())
         os.Exit(1)
     }
 
     contents := make(map[string]content)
     err := parseMarkdown(viper.GetString("ContentDir"), ".md", contents)
     if err != nil {
-        fmt.Println(err.Error())
+        logger.Error("parseMarkdown", "error", err.Error())
         os.Exit(1)
     }
 
     err = parseMarkdown(viper.GetString("ContentPostsDir"), ".md", contents)
     if err != nil {
-        fmt.Println(err.Error())
+        logger.Error("parseMarkdown", "error", err.Error())
         os.Exit(1)
     }
 
     templates := make(map[string]tpl)
     err = parseTemplates(viper.GetString("ThemeDir"), ".tmpl", templates, contents)
     if err != nil {
-        fmt.Println(err.Error())
+        logger.Error("parseTemplates", "error", err.Error())
         os.Exit(1)
     }
 
     if err = parsePosts(templates, contents); err != nil {
-        fmt.Println(err.Error())
+        logger.Error("parsePosts", "error", err.Error())
         os.Exit(1)
     }
 
     if err = createFiles(templates); err != nil {
-        fmt.Println(err.Error())
+        logger.Error("createFiles", "error", err.Error())
         os.Exit(1)
     }
 }
