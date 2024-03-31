@@ -69,7 +69,7 @@ func getFilesByExt(dir, ext string) ([]entry, error) {
     }
 
     var kind string = "template"
-    if strings.Contains(dir, viper.GetString("PostDir")) {
+    if dir == viper.GetString("ContentPostsDir") {
         kind = "content"
     }
 
@@ -144,10 +144,7 @@ func parseTemplates(
         return err
     }
 
-    files, err := getFilepaths(fmt.Sprintf("%s/%s",
-        viper.GetString("LayoutDir"),
-        viper.GetString("PartialDir"),
-    ), ".tmpl")
+    files, err := getFilepaths(viper.GetString("PartialsDir"), ".tmpl")
     if err != nil {
         return err
     }
@@ -183,10 +180,7 @@ func parseTemplates(
 }
 
 func parsePosts(templates map[string]tpl, contents map[string]content) error {
-    files, err := getFilepaths(fmt.Sprintf("%s/%s",
-        viper.GetString("LayoutDir"),
-        viper.GetString("PartialDir"),
-    ), ".tmpl")
+    files, err := getFilepaths(viper.GetString("PartialsDir"), ".tmpl")
     if err != nil {
         return err
     }
@@ -196,7 +190,7 @@ func parsePosts(templates map[string]tpl, contents map[string]content) error {
             files, 
             fmt.Sprintf(
                 "%s/%s",
-                viper.GetString("LayoutDir"),
+                viper.GetString("ThemeDir"),
                 "post.html.tmpl",
             ),
         )
@@ -230,11 +224,7 @@ func createFiles(templates map[string]tpl) error {
     for filename, tpl := range templates {
         var dir string = viper.GetString("PublicDir")
         if tpl.kind == "content" {
-             dir = fmt.Sprintf(
-                 "%s/%s", 
-                 viper.GetString("PublicDir"), 
-                 viper.GetString("PostDir"),
-             ) 
+             dir = viper.GetString("PublicPostsDir")
         }
 
         file, err := os.Create(fmt.Sprintf("%s/%s.html", dir, filename))
@@ -251,41 +241,27 @@ func createFiles(templates map[string]tpl) error {
 }
 
 func generate(cmd *cobra.Command, args []string) {
-    err := createDir(fmt.Sprintf("%s/%s",
-        viper.GetString("PublicDir"),
-        viper.GetString("PostDir"),
-    )) 
-    if err != nil {
+    if err := createDir(viper.GetString("PublicPostsDir")); err != nil {
         fmt.Println(err.Error())
         os.Exit(1)
     }
 
     contents := make(map[string]content)
-    err = parseMarkdown(viper.GetString("ContentDir"), ".md", contents)
+    err := parseMarkdown(viper.GetString("ContentDir"), ".md", contents)
     if err != nil {
         fmt.Println(err.Error())
         os.Exit(1)
     }
 
-    if err = parseMarkdown(
-        fmt.Sprintf(
-            "%s/%s",
-            viper.GetString("ContentDir"),
-            viper.GetString("PostDir"),
-        ),
-        ".md", contents,
-    ); err != nil {
+    err = parseMarkdown(viper.GetString("ContentPostsDir"), ".md", contents)
+    if err != nil {
         fmt.Println(err.Error())
         os.Exit(1)
     }
 
     templates := make(map[string]tpl)
-    if err = parseTemplates(
-        viper.GetString("LayoutDir"), 
-        ".tmpl", 
-        templates,
-        contents,
-    ); err != nil {
+    err = parseTemplates(viper.GetString("ThemeDir"), ".tmpl", templates, contents)
+    if err != nil {
         fmt.Println(err.Error())
         os.Exit(1)
     }

@@ -10,10 +10,29 @@ import (
 
 func init() {
     viper.SetDefault("ContentDir", "content")
-    viper.SetDefault("LayoutDir", "layout")
-    viper.SetDefault("PartialDir", "partials")
     viper.SetDefault("PublicDir", "public")
-    viper.SetDefault("PostDir", "posts")
+    viper.SetDefault("ThemesDir", "themes")
+    viper.SetDefault("Theme", "sesame")
+
+    viper.SetDefault(
+        "ThemeDir",
+        fmt.Sprintf("%s/%s", viper.GetString("ThemesDir"), viper.GetString("Theme")),
+    )
+
+    viper.SetDefault(
+        "PartialsDir",
+        fmt.Sprintf("%s/partials", viper.GetString("ThemeDir")),
+    )
+
+    viper.SetDefault(
+        "PublicPostsDir",
+        fmt.Sprintf("%s/posts", viper.GetString("PublicDir")),
+    )
+
+    viper.SetDefault(
+        "ContentPostsDir",
+        fmt.Sprintf("%s/posts", viper.GetString("ContentDir")),
+    )
 }
 
 var rootCmd = &cobra.Command{
