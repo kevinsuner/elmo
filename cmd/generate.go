@@ -14,6 +14,8 @@ import (
 	"github.com/yuin/goldmark-meta"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func init() {
@@ -39,7 +41,7 @@ func createDir(path string) error {
     return err
 }
 
-func getFilenames(dir, ext string, path bool) ([]string, error) {
+func getFilepaths(dir, ext string) ([]string, error) {
     files, err := os.ReadDir(dir)
     if err != nil {
         return nil, err
@@ -48,12 +50,7 @@ func getFilenames(dir, ext string, path bool) ([]string, error) {
     filenames := make([]string, 0, len(files))
     for _, file := range files {
         if !file.IsDir() && filepath.Ext(file.Name()) == ext {
-            if path {
-                filenames = append(filenames, fmt.Sprintf("%s/%s", dir, file.Name()))
-                continue
-            }
-
-            filenames = append(filenames, strings.Split(file.Name(), ".")[0])
+            filenames = append(filenames, fmt.Sprintf("%s/%s", dir, file.Name()))
         }
     }
 
@@ -132,9 +129,36 @@ func parseMarkdown(dir, ext string, contents map[string]content) error {
     return nil
 }
 
+type post struct {
+    Title   string
+    Slug    string
+}
+
+func getPosts() ([]post, error) {
+    files, err := os.ReadDir(viper.GetString("ContentPostsDir"))
+    if err != nil {
+        return nil, err
+    }
+
+    posts := make([]post, 0, len(files))
+    for _, file := range files {
+        if !file.IsDir() {
+            filename := strings.Split(file.Name(), ".")[0]
+            posts = append(posts, post{
+                Title: cases.Title(language.English).String(
+                    strings.ReplaceAll(filename, "-", " "),
+                ),
+                Slug: filename,
+            })
+        }
+    }
+
+    return posts, nil
+}
+
 type tpl struct {
-   kind string
-   content string
+   kind     string
+   content  string
 }
 
 func parseTemplates(
@@ -147,12 +171,12 @@ func parseTemplates(
         return err
     }
 
-    files, err := getFilenames(viper.GetString("PartialsDir"), ".tmpl", true)
+    files, err := getFilepaths(viper.GetString("PartialsDir"), ".tmpl")
     if err != nil {
         return err
     }
 
-    posts, err := getFilenames(viper.GetString("ContentPostsDir"), ".md", false)
+    posts, err := getPosts()
     if err != nil {
         return err
     }
@@ -189,7 +213,7 @@ func parseTemplates(
 }
 
 func parsePosts(templates map[string]tpl, contents map[string]content) error {
-    files, err := getFilenames(viper.GetString("PartialsDir"), ".tmpl", true)
+    files, err := getFilepaths(viper.GetString("PartialsDir"), ".tmpl")
     if err != nil {
         return err
     }

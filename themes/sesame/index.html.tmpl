@@ -2,7 +2,8 @@
 {{ template "header" . }}
     <ul>
     {{ range $post := .posts }}
-        <li>{{ $post }}</li>
+        <li>{{ $post.Title }}</li>
+        <li>{{ $post.Slug }}</li>
     {{ end }}
     </ul> 
     {{ .html }}
