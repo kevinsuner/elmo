@@ -1,5 +1,10 @@
 {{ define "index" }}
 {{ template "header" . }}
+    <ul>
+    {{ range $post := .posts }}
+        <li>{{ $post }}</li>
+    {{ end }}
+    </ul> 
     {{ .html }}
 {{ template "footer" . }}
 {{ end }}
