@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
+	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -36,26 +37,27 @@ func init() {
         fmt.Sprintf("%s/posts", viper.GetString("ContentDir")),
     )
 
-    viper.SetDefault("LogLevel", slog.LevelInfo)
+    viper.SetDefault("LogLevel", log.InfoLevel)
     viper.Set("Logger", 
-        slog.New(
-            slog.NewTextHandler(
-                os.Stderr,
-                &slog.HandlerOptions{
-                    Level: viper.Get("LogLevel").(slog.Level),
-                },
-            ),
+        log.NewWithOptions(
+            os.Stderr,
+            log.Options{
+                ReportCaller: true,
+                ReportTimestamp: true,
+                TimeFormat: time.Kitchen,
+                Level: viper.Get("LogLevel").(log.Level),
+            },
         ),
     )
 }
 
 var rootCmd = &cobra.Command{
     Use: "elmo",
-    Short: "placeholder",
-    Long: `placeholder`,
-    Run: func(cmd *cobra.Command, args []string) {
-        fmt.Println("placeholder") 
-    },
+    Short: "A minimalist static web site generator",
+    Long: `A minimalist open-source static web page generator, that lives
+in your terminal, and is built for individuals that prioritize
+content over features.
+    `,
 }
 
 func Execute() {
