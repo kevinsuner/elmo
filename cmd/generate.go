@@ -58,6 +58,7 @@ func getFilepaths(dir, ext string) ([]string, error) {
 }
 
 type entry struct {
+    kind    string
     name    string
 }
 
@@ -67,11 +68,17 @@ func getFilesByExt(dir, ext string) ([]entry, error) {
         return nil, err
     }
 
+    var kind string = "template"
+    if strings.Contains(dir, viper.GetString("PostDir")) {
+        kind = "content"
+    }
+
     entries := make([]entry, 0, len(files))
     for _, file := range files {
         if !file.IsDir() {
             if filepath.Ext(file.Name()) == ext {
                 entries = append(entries, entry{
+                    kind: kind,
                     name: file.Name(),
                 })
             }
@@ -82,8 +89,9 @@ func getFilesByExt(dir, ext string) ([]entry, error) {
 }
 
 type content struct {
-    meta map[string]interface{}
-    html template.HTML
+    kind    string
+    meta    map[string]interface{}
+    html    template.HTML
 }
 
 func parseMarkdown(dir, ext string, contents map[string]content) error {
@@ -112,8 +120,9 @@ func parseMarkdown(dir, ext string, contents map[string]content) error {
 
         filename := strings.Split(entry.name, ".")[0]
         contents[filename] = content{
-            meta: meta.Get(ctx),
-            html: template.HTML(buf.String()),
+            kind:   entry.kind,
+            meta:   meta.Get(ctx),
+            html:   template.HTML(buf.String()),
         }
     }
 
@@ -121,13 +130,12 @@ func parseMarkdown(dir, ext string, contents map[string]content) error {
 }
 
 type tpl struct {
-   tag string
+   kind string
    content string
 }
 
 func parseTemplates(
     dir, ext string,
-    post bool,
     templates map[string]tpl,
     contents map[string]content,
 ) error {
@@ -140,45 +148,77 @@ func parseTemplates(
         viper.GetString("LayoutDir"),
         viper.GetString("PartialDir"),
     ), ".tmpl")
+    if err != nil {
+        return err
+    }
 
     for _, entry := range entries {
         filename := strings.Split(entry.name, ".")[0]
-        var tmpl *template.Template
-        var tag string
-        if post {
-            files = append(files, 
-                fmt.Sprintf(
-                    "%s/%s", dir, "post.html.tmpl",
-                ),
-            )
-
-            tag = "post"
-            tmpl, err = template.New("post").ParseFiles(files...)
+        if _, ok := contents[filename]; ok {
+            files = append(files, fmt.Sprintf("%s/%s", dir, entry.name))
+            tmpl, err := template.New(filename).ParseFiles(files...)
             if err != nil {
                 return err
             }
-        } else {
-            tag = "page"
-            files = append(files, fmt.Sprintf("%s/%s", dir, entry.name))
-            tmpl, err = template.New(filename).ParseFiles(files...)
-            if err != nil {
+
+            var buf bytes.Buffer
+            if err := tmpl.Execute(
+                &buf, 
+                map[string]interface{}{
+                    "meta": contents[filename].meta,
+                    "html": contents[filename].html,
+                },
+            ); err != nil {
                 return err
+            }
+
+            templates[filename] = tpl{
+                kind: contents[filename].kind,
+                content: buf.String(),
             }
         }
-        
+    }
+
+    return nil
+}
+
+func parsePosts(templates map[string]tpl, contents map[string]content) error {
+    files, err := getFilepaths(fmt.Sprintf("%s/%s",
+        viper.GetString("LayoutDir"),
+        viper.GetString("PartialDir"),
+    ), ".tmpl")
+    if err != nil {
+        return err
+    }
+
+    for filename, content := range contents {
+        files = append(
+            files, 
+            fmt.Sprintf(
+                "%s/%s",
+                viper.GetString("LayoutDir"),
+                "post.html.tmpl",
+            ),
+        )
+
+        tmpl, err := template.New("post").ParseFiles(files...)
+        if err != nil {
+            return err
+        }
+
         var buf bytes.Buffer
         if err := tmpl.Execute(
-            &buf, 
+            &buf,
             map[string]interface{}{
-                "meta": contents[filename].meta,
-                "html": contents[filename].html,
+                "meta": content.meta,
+                "html": content.html,
             },
         ); err != nil {
             return err
         }
 
         templates[filename] = tpl{
-            tag: tag,
+            kind: content.kind,
             content: buf.String(),
         }
     }
@@ -188,8 +228,8 @@ func parseTemplates(
 
 func createFiles(templates map[string]tpl) error {
     for filename, tpl := range templates {
-        dir := viper.GetString("PublicDir") 
-        if tpl.tag == "post" {
+        var dir string = viper.GetString("PublicDir")
+        if tpl.kind == "content" {
              dir = fmt.Sprintf(
                  "%s/%s", 
                  viper.GetString("PublicDir"), 
@@ -239,13 +279,10 @@ func generate(cmd *cobra.Command, args []string) {
         os.Exit(1)
     }
 
-    // TODO: Fix this, only parsing index and post
-
     templates := make(map[string]tpl)
     if err = parseTemplates(
         viper.GetString("LayoutDir"), 
         ".tmpl", 
-        false, 
         templates,
         contents,
     ); err != nil {
@@ -253,13 +290,7 @@ func generate(cmd *cobra.Command, args []string) {
         os.Exit(1)
     }
 
-    if err = parseTemplates(
-        viper.GetString("LayoutDir"), 
-        ".tmpl", 
-        true, 
-        templates,
-        contents,
-    ); err != nil {
+    if err = parsePosts(templates, contents); err != nil {
         fmt.Println(err.Error())
         os.Exit(1)
     }
