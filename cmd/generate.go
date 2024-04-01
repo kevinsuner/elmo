@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/yuin/goldmark"
@@ -23,6 +22,8 @@ import (
 func init() {
     rootCmd.AddCommand(generateCmd)
 }
+
+// TODO: Update short and long
 
 var generateCmd = &cobra.Command{
     Use: "generate",
@@ -73,7 +74,7 @@ func getFilesByExt(dir, ext string) ([]entry, error) {
     }
 
     var kind string = "template"
-    if dir == viper.GetString("ContentPostsDir") {
+    if dir == contentPostsDir {
         kind = "content"
     }
 
@@ -139,7 +140,7 @@ type post struct {
 }
 
 func getPosts() ([]post, error) {
-    files, err := os.ReadDir(viper.GetString("ContentPostsDir"))
+    files, err := os.ReadDir(contentPostsDir)
     if err != nil {
         return nil, err
     }
@@ -148,7 +149,7 @@ func getPosts() ([]post, error) {
     for _, file := range files {
         if !file.IsDir() {
             filename := strings.Split(file.Name(), ".")[0]
-            lang, err := language.Parse(viper.GetString("Language"))
+            lang, err := language.Parse(viper.GetString("language"))
             if err != nil {
                 return nil, err
             }
@@ -180,7 +181,7 @@ func parseTemplates(
         return err
     }
 
-    files, err := getFilepaths(viper.GetString("PartialsDir"), ".tmpl")
+    files, err := getFilepaths(partialsDir, ".tmpl")
     if err != nil {
         return err
     }
@@ -212,8 +213,8 @@ func parseTemplates(
             }
 
             templates[filename] = tpl{
-                kind: contents[filename].kind,
-                content: buf.String(),
+                kind:       contents[filename].kind,
+                content:    buf.String(),
             }
         }
     }
@@ -222,22 +223,14 @@ func parseTemplates(
 }
 
 func parsePosts(templates map[string]tpl, contents map[string]content) error {
-    files, err := getFilepaths(viper.GetString("PartialsDir"), ".tmpl")
+    files, err := getFilepaths(partialsDir, ".tmpl")
     if err != nil {
         return err
     }
 
     for filename, content := range contents {
         if content.kind == "content" {
-            files = append(
-                files, 
-                fmt.Sprintf(
-                    "%s/%s",
-                    viper.GetString("ThemeDir"),
-                    "post.html.tmpl",
-                ),
-            )
-
+            files = append(files, fmt.Sprintf("%s/%s", themeDir, "post.html.tmpl"))
             tmpl, err := template.New("post").ParseFiles(files...)
             if err != nil {
                 return err
@@ -255,8 +248,8 @@ func parsePosts(templates map[string]tpl, contents map[string]content) error {
             }
 
             templates[filename] = tpl{
-                kind: content.kind,
-                content: buf.String(),
+                kind:       content.kind,
+                content:    buf.String(),
             }
         }
     }
@@ -264,11 +257,10 @@ func parsePosts(templates map[string]tpl, contents map[string]content) error {
     return nil
 }
 
-func createFiles(templates map[string]tpl) error {
-    var dir string = viper.GetString("PublicDir")
+func createFiles(dir string, templates map[string]tpl) error {
     for filename, tpl := range templates {
         if tpl.kind == "content" {
-             dir = viper.GetString("PublicPostsDir")
+             dir = publicPostsDir
         }
 
         file, err := os.Create(fmt.Sprintf("%s/%s.html", dir, filename))
@@ -286,39 +278,36 @@ func createFiles(templates map[string]tpl) error {
 
 func generate(cmd *cobra.Command, args []string) {
     ts := time.Now()
-    log := viper.Get("Logger").(*log.Logger)
-
-    if err := createDir(viper.GetString("PublicPostsDir")); err != nil {
-        log.Fatal("createDir", "error", err.Error())
+    if err := createDir(publicPostsDir); err != nil {
+        logger.Fatal("createDir", "error", err.Error())
     }
 
     contents := make(map[string]content)
-    err := parseMarkdown(viper.GetString("ContentDir"), ".md", contents)
+    err := parseMarkdown(ContentDir, ".md", contents)
     if err != nil {
-        log.Fatal("parseMarkdown", "error", err.Error())
+        logger.Fatal("parseMarkdown", "error", err.Error())
     }
 
-    err = parseMarkdown(viper.GetString("ContentPostsDir"), ".md", contents)
+    err = parseMarkdown(contentPostsDir, ".md", contents)
     if err != nil {
-        log.Fatal("parseMarkdown", "error", err.Error())
+        logger.Fatal("parseMarkdown", "error", err.Error())
     }
 
     templates := make(map[string]tpl)
-    err = parseTemplates(viper.GetString("ThemeDir"), ".tmpl", templates, contents)
+    err = parseTemplates(themeDir, ".tmpl", templates, contents)
     if err != nil {
-        log.Fatal("parseTemplates", "error", err.Error())
+        logger.Fatal("parseTemplates", "error", err.Error())
     }
 
     if err = parsePosts(templates, contents); err != nil {
-        log.Fatal("parsePosts", "error", err.Error())
+        logger.Fatal("parsePosts", "error", err.Error())
     }
 
-    if err = createFiles(templates); err != nil {
-        log.Fatal("createFiles", "error", err.Error())
+    if err = createFiles(PublicDir, templates); err != nil {
+        logger.Fatal("createFiles", "error", err.Error())
     }
 
-    log.SetReportCaller(false)
-    log.Info("Done!", "took", fmt.Sprintf("%dms", time.Since(ts).Milliseconds()))
-    log.Info("Files parsed", "total", len(contents))
-    log.Info("Files generated", "total", len(templates))
+    logger.Info("Done!", "took", fmt.Sprintf("%dms", time.Since(ts).Milliseconds()))
+    logger.Info("Files parsed", "total", len(contents))
+    logger.Info("Files generated", "total", len(templates))
 }
