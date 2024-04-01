@@ -33,7 +33,7 @@ folder using the <git> command, otherwise it will fallback
 to cloning the default theme (https://github.com/kevinsuner/thumbalina).
 
 The user is responsible to let the program know which theme
-should it use, via its configuration file <elmo.toml>`,
+should it use, via its configuration file <elmo.toml>.`,
     Run: initialize,
 }
 

@@ -32,7 +32,7 @@ html/template.
 
 It uses the files provided by the theme (which is set in the
 configuration file <elmo.toml>), in the html/template parsing
-and execution phases.`,
+and execution phase.`,
     Run: generate,
 }
 
