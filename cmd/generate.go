@@ -318,6 +318,7 @@ func generate(cmd *cobra.Command, args []string) {
         log.Fatal("createFiles", "error", err.Error())
     }
 
+    log.SetReportCaller(false)
     log.Info("Done!", "took", fmt.Sprintf("%dms", time.Since(ts).Milliseconds()))
     log.Info("Files parsed", "total", len(contents))
     log.Info("Files generated", "total", len(templates))
