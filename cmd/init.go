@@ -17,22 +17,20 @@ var ProjectName, ThemeURL string
 func init() {
     rootCmd.AddCommand(initCmd)
     initCmd.Flags().StringVar(&ProjectName, "name", "", "project name")
-    initCmd.Flags().StringVar(&ThemeURL, "theme-url", "", "e.g. https://github.com/kevinsuner/elmo-erlosung.git")
+    initCmd.Flags().StringVar(&ThemeURL, "theme-url", "", "e.g. https://github.com/kevinsuner/elmo-thumbalina.git")
     initCmd.MarkFlagRequired("name")
 }
 
 var initCmd = &cobra.Command{
     Use: "init",
     Short: "Initializes a new project using the given name",
-    
-    // TODO: Add information about the theme cloned on init when no
-    // theme is provided
     Long: `Creates a new directory using the given project name,
 with a set of sub-folders such as content, posts and themes,
 which are required for the program to work.
-    
+ 
 If a theme is provided, it will be cloned inside the themes
-folder using the <git> command.
+folder using the <git> command, otherwise it will fallback
+to cloning the default theme (https://github.com/kevinsuner/thumbalina).
 
 The user is responsible to let the program know which theme
 should it use, via its configuration file <elmo.toml>`,
