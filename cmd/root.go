@@ -10,12 +10,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+// TODO: Setup goreleaser :)
+
 const (
     ContentDir  string = "content"
     PublicDir   string = "public"
     ThemesDir   string = "themes"
     
-    DefaultTheme string = "https://github.com/kevinsuner/life.lua.git"
+    DefaultTheme string = "https://github.com/kevinsuner/elmo-thumbalina.git"
 )
 
 var (
@@ -29,7 +31,7 @@ var (
 
 func init() {
     viper.SetDefault("language", "en")
-    viper.SetDefault("theme", "sesame")
+    viper.SetDefault("theme", "elmo-thumbalina")
     viper.SetDefault("debug", false)
 
     themeDir        = fmt.Sprintf("%s/%s", ThemesDir, viper.GetString("theme"))
