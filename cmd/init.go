@@ -25,7 +25,7 @@ func init() {
 
 var initCmd = &cobra.Command{
     Use: "init",
-    Short: "Initializes a new project with the given name",
+    Short: "Initializes a new project using the given name",
     Long: `Creates a new directory using the given project name,
 with a set of sub-folders such as content, posts and themes,
 which are required for the program to work.
