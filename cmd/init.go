@@ -30,7 +30,7 @@ which are required for the program to work.
  
 If a theme is provided, it will be cloned inside the themes
 folder using the <git> command, otherwise it will fallback
-to cloning the default theme (https://github.com/kevinsuner/thumbalina).
+to cloning the default theme (https://github.com/kevinsuner/elmo-thumbalina).
 
 The user is responsible to let the program know which theme
 should it use, via its configuration file <elmo.toml>.`,
