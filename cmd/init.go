@@ -9,23 +9,24 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-var Name, Theme string
+var ProjectName, ThemeURL string
 
 func init() {
     rootCmd.AddCommand(initCmd)
-    initCmd.Flags().StringVar(&Name, "name", "", "project name")
-    initCmd.Flags().StringVar(&Theme, "theme", "", "e.g. https://github.com/kevinsuner/elmo-erlosung.git")
+    initCmd.Flags().StringVar(&ProjectName, "name", "", "project name")
+    initCmd.Flags().StringVar(&ThemeURL, "theme-url", "", "e.g. https://github.com/kevinsuner/elmo-erlosung.git")
     initCmd.MarkFlagRequired("name")
 }
 
 var initCmd = &cobra.Command{
     Use: "init",
     Short: "Initializes a new project using the given name",
+    
+    // TODO: Add information about the theme cloned on init when no
+    // theme is provided
     Long: `Creates a new directory using the given project name,
 with a set of sub-folders such as content, posts and themes,
 which are required for the program to work.
@@ -38,54 +39,53 @@ should it use, via its configuration file <elmo.toml>`,
     Run: initialize,
 }
 
+func cloneTheme(themeUrl, projectName string) error {
+    _, err := url.ParseRequestURI(themeUrl)
+    if err != nil {
+        return err     
+    }
+
+    command := exec.Command("git", "clone", themeUrl)
+    command.Dir = fmt.Sprintf("%s/%s", projectName, ThemesDir)
+    if err := command.Run(); err != nil {
+        return err
+    }
+
+    return nil
+}
+
 func initialize(cmd *cobra.Command, args []string) {
     ts := time.Now()
-    log := viper.Get("Logger").(*log.Logger)
-
-    _, err := os.Stat(Name)
+    _, err := os.Stat(ProjectName)
     if err != nil {
         if !errors.Is(err, fs.ErrNotExist) {
-            log.Fatal("os.Stat", "error", err.Error())
+            logger.Fatal("os.Stat", "error", err.Error())
         }
     }
 
-    if err := os.MkdirAll(
-        fmt.Sprintf(
-            "%s/%s",
-            Name,
-            viper.GetString("ContentPostsDir"),
-        ),
-        os.ModePerm,
-    ); err != nil {
-        log.Fatal("os.MkdirAll", "error", err.Error())
+    err = os.MkdirAll(fmt.Sprintf("%s/%s", ProjectName, contentPostsDir), os.ModePerm)
+    if err != nil {
+        logger.Fatal("os.MkdirAll", "error", err.Error())
     }
 
-    if err := os.Mkdir(
-        fmt.Sprintf(
-            "%s/%s",
-            Name,
-            viper.GetString("ThemesDir"),
-        ),
-        os.ModePerm,
-    ); err != nil {
-        log.Fatal("os.Mkdir", "error", err.Error())
+    err = os.Mkdir(fmt.Sprintf("%s/%s", ProjectName, ThemesDir), os.ModePerm)
+    if err != nil {
+        logger.Fatal("os.Mkdir", "error", err.Error())
     }
 
-    if cmd.Flag("theme").Changed {
-        _, err = url.ParseRequestURI(cmd.Flag("theme").Value.String())
-        if err != nil {
-            log.Fatal("url.ParseRequestURI", "error", err.Error())
+    themeUrl := DefaultTheme
+    if cmd.Flag("theme-url").Changed {
+        themeUrl = cmd.Flag("theme-url").Value.String()
+        if err := cloneTheme(themeUrl, ProjectName); err != nil {
+            logger.Fatal("cloneTheme", "error", err.Error())
         }
-
-        command := exec.Command("git", "clone", cmd.Flag("theme").Value.String())
-        command.Dir = fmt.Sprintf("%s/%s", Name, viper.GetString("ThemesDir"))
-        if err := command.Run(); err != nil {
-            log.Fatal("exec.Command", "error", err.Error())
+    } else {
+        if err := cloneTheme(themeUrl, ProjectName); err != nil {
+            logger.Fatal("cloneTheme", "error", err.Error())
         }
     }
 
-    log.SetReportCaller(false)
-    log.Info("Done!", "took", fmt.Sprintf("%dms", time.Since(ts).Milliseconds()))
-    log.Info("Created project", "name", Name)
-    if cmd.Flag("theme").Changed { log.Info("Downloaded theme", "url", Theme) }
+    logger.Info("Done!", "took", fmt.Sprintf("%dms", time.Since(ts).Milliseconds()))
+    logger.Info("Created project", "name", ProjectName)
+    logger.Info("Downloaded theme", "url", themeUrl)
 }
