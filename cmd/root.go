@@ -56,8 +56,7 @@ var rootCmd = &cobra.Command{
     Short: "A minimalist static web site generator",
     Long: `A minimalist open-source static web page generator, that lives
 in your terminal, and is built for individuals that prioritize
-content over features.
-    `,
+content over features.`,
 }
 
 func Execute() {

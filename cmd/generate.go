@@ -29,8 +29,7 @@ var generateCmd = &cobra.Command{
     Short: "Generates a static web page using markdown files",
     Long: `Generates a static web page by parsing the markdown files found in the
 content directory to html, embedding the resulting output into a new
-template, parsed using the files provided by the selected theme.
-    `,
+template, parsed using the files provided by the selected theme.`,
     Run: generate,
 }
 
