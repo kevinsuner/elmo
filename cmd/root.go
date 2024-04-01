@@ -21,16 +21,19 @@ const (
 var (
     contentPostsDir string = fmt.Sprintf("%s/posts", ContentDir)
     publicPostsDir  string = fmt.Sprintf("%s/posts", PublicDir)
-    themeDir        string = fmt.Sprintf("%s/%s", ThemesDir, viper.GetString("theme"))
-    partialsDir     string = fmt.Sprintf("%s/partials", viper.GetString("theme"))
+    themeDir        string
+    partialsDir     string
 
     logger *log.Logger
 )
 
 func init() {
     viper.SetDefault("language", "en")
-    viper.SetDefault("theme", "life.lua")
+    viper.SetDefault("theme", "sesame")
     viper.SetDefault("debug", false)
+
+    themeDir        = fmt.Sprintf("%s/%s", ThemesDir, viper.GetString("theme"))
+    partialsDir     = fmt.Sprintf("%s/partials", themeDir)
 
     logLevel := log.InfoLevel
     reportCaller := false
