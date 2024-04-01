@@ -23,14 +23,16 @@ func init() {
     rootCmd.AddCommand(generateCmd)
 }
 
-// TODO: Update short and long
-
 var generateCmd = &cobra.Command{
     Use: "generate",
-    Short: "Generates a static web page using markdown files",
-    Long: `Generates a static web page by parsing the markdown files found in the
-content directory to html, embedding the resulting output into a new
-template, parsed using the files provided by the selected theme.`,
+    Short: "Generates a static web page using Markdown files",
+    Long: `Transforms the Markdown files found in the content directory
+to HTML, and embeds the resulting output into a Golang
+html/template.
+
+It uses the files provided by the theme (which is set in the
+configuration file <elmo.toml>), in the html/template parsing
+and execution phases.`,
     Run: generate,
 }
 
