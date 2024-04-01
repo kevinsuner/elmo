@@ -25,7 +25,7 @@ func init() {
 
 var generateCmd = &cobra.Command{
     Use: "generate",
-    Short: "Generates a static web page using Markdown files",
+    Short: "Generate a static web page using Markdown files",
     Long: `Transforms the Markdown files found in the content directory
 to HTML, and embeds the resulting output into a Golang
 html/template.
