@@ -10,44 +10,43 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+    ContentDir  string = "content"
+    PublicDir   string = "public"
+    ThemesDir   string = "themes"
+    
+    DefaultTheme string = "https://github.com/kevinsuner/life.lua.git"
+)
+
+var (
+    contentPostsDir string = fmt.Sprintf("%s/posts", ContentDir)
+    publicPostsDir  string = fmt.Sprintf("%s/posts", PublicDir)
+    themeDir        string = fmt.Sprintf("%s/%s", ThemesDir, viper.GetString("theme"))
+    partialsDir     string = fmt.Sprintf("%s/partials", viper.GetString("theme"))
+
+    logger *log.Logger
+)
+
 func init() {
-    viper.SetDefault("Language", "en")
-    viper.SetDefault("ContentDir", "content")
-    viper.SetDefault("PublicDir", "public")
-    viper.SetDefault("ThemesDir", "themes")
-    viper.SetDefault("Theme", "sesame")
+    viper.SetDefault("language", "en")
+    viper.SetDefault("theme", "life.lua")
+    viper.SetDefault("debug", false)
 
-    viper.SetDefault(
-        "ThemeDir",
-        fmt.Sprintf("%s/%s", viper.GetString("ThemesDir"), viper.GetString("Theme")),
-    )
+    logLevel := log.InfoLevel
+    reportCaller := false
+    if viper.GetBool("debug") {
+        reportCaller = true
+        logLevel = log.DebugLevel
+    }
 
-    viper.SetDefault(
-        "PartialsDir",
-        fmt.Sprintf("%s/partials", viper.GetString("ThemeDir")),
-    )
-
-    viper.SetDefault(
-        "PublicPostsDir",
-        fmt.Sprintf("%s/posts", viper.GetString("PublicDir")),
-    )
-
-    viper.SetDefault(
-        "ContentPostsDir",
-        fmt.Sprintf("%s/posts", viper.GetString("ContentDir")),
-    )
-
-    viper.SetDefault("LogLevel", log.InfoLevel)
-    viper.Set("Logger", 
-        log.NewWithOptions(
-            os.Stderr,
-            log.Options{
-                ReportCaller: true,
-                ReportTimestamp: true,
-                TimeFormat: time.Kitchen,
-                Level: viper.Get("LogLevel").(log.Level),
-            },
-        ),
+    logger = log.NewWithOptions(
+        os.Stderr,
+        log.Options{
+            ReportCaller: reportCaller,
+            ReportTimestamp: true,
+            TimeFormat: time.Kitchen,
+            Level: logLevel,
+        },
     )
 }
 
