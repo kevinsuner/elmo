@@ -75,6 +75,8 @@ func initialize(cmd *cobra.Command, args []string) {
         if err != nil {
             logger.Fatal("cloneTheme", "error", err.Error())
         }
+
+        logger.Info("Downloaded theme", "url", cmd.Flag("theme-url").Value.String())
     }
 
     logger.Info("Done!", "took", fmt.Sprintf("%dms", time.Since(ts).Milliseconds()))
