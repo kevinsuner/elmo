@@ -21,6 +21,10 @@ const (
 
     // Delimiters
     COMMA       = ","
+    LBRACE      = "{"
+    RBRACE      = "}"
+    LBRACKET    = "["
+    RBRACKET    = "]"
 )
 
 type Lexer struct {
@@ -46,6 +50,14 @@ func (l *Lexer) NextToken() Token {
         tok = newToken(ASSIGN, l.ch)
     case ',':
         tok = newToken(COMMA, l.ch)
+    case '{':
+        tok = newToken(LBRACE, l.ch)
+    case '}':
+        tok = newToken(RBRACE, l.ch)
+    case '[':
+        tok = newToken(LBRACKET, l.ch)
+    case ']':
+        tok = newToken(RBRACKET, l.ch)
     case '"':
         tok.Type = STRING
         tok.Literal = l.readStr()
