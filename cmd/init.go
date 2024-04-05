@@ -29,8 +29,7 @@ with a set of sub-folders such as content, posts and themes,
 which are required for the program to work.
  
 If a theme is provided, it will be cloned inside the themes
-folder using the <git> command, otherwise it will fallback
-to cloning the default theme (https://github.com/kevinsuner/elmo-thumbalina).
+folder using the <git> command.
 
 The user is responsible to let the program know which theme
 should it use, via its configuration file <elmo.toml>.`,
@@ -71,19 +70,13 @@ func initialize(cmd *cobra.Command, args []string) {
         logger.Fatal("os.Mkdir", "error", err.Error())
     }
 
-    themeUrl := DefaultTheme
     if cmd.Flag("theme-url").Changed {
-        themeUrl = cmd.Flag("theme-url").Value.String()
-        if err := cloneTheme(themeUrl, ProjectName); err != nil {
-            logger.Fatal("cloneTheme", "error", err.Error())
-        }
-    } else {
-        if err := cloneTheme(themeUrl, ProjectName); err != nil {
+        err = cloneTheme(cmd.Flag("theme-url").Value.String(), ProjectName)
+        if err != nil {
             logger.Fatal("cloneTheme", "error", err.Error())
         }
     }
 
     logger.Info("Done!", "took", fmt.Sprintf("%dms", time.Since(ts).Milliseconds()))
     logger.Info("Created project", "name", ProjectName)
-    logger.Info("Downloaded theme", "url", themeUrl)
 }
