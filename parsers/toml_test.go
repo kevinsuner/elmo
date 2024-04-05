@@ -6,7 +6,9 @@ import (
 
 func TestNextToken(t *testing.T) {
     input := `title = "TOML Example"
-    port = 8000`
+    port = 8000
+    ports = [ 8001, 8002, 8003 ]
+    user = { name = "john", pass = "1234" }`
 
     tests := []struct{
         expectedType    TokenType
@@ -18,6 +20,26 @@ func TestNextToken(t *testing.T) {
         {IDENT, "port"},
         {ASSIGN, "="},
         {INT, "8000"},
+        {IDENT, "ports"},
+        {ASSIGN, "="},
+        {LBRACKET, "["},
+        {INT, "8001"},
+        {COMMA, ","},
+        {INT, "8002"},
+        {COMMA, ","},
+        {INT, "8003"},
+        {RBRACKET, "]"},
+        {IDENT, "user"},
+        {ASSIGN, "="},
+        {LBRACE, "{"},
+        {IDENT, "name"},
+        {ASSIGN, "="},
+        {STRING, "john"},
+        {COMMA, ","},
+        {IDENT, "pass"},
+        {ASSIGN, "="},
+        {STRING, "1234"},
+        {RBRACE, "}"},
         {EOF, ""},
     }
 
