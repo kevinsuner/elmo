@@ -8,7 +8,8 @@ func TestNextToken(t *testing.T) {
     input := `title = "TOML Example"
     port = 8000
     ports = [ 8001, 8002, 8003 ]
-    user = { name = "john", pass = "1234" }`
+    data = [ ["delta", "phi"],  [3] ]
+    user = { name = "john", age = 28 }`
 
     tests := []struct{
         expectedType    TokenType
@@ -29,6 +30,19 @@ func TestNextToken(t *testing.T) {
         {COMMA, ","},
         {INT, "8003"},
         {RBRACKET, "]"},
+        {IDENT, "data"},
+        {ASSIGN, "="},
+        {LBRACKET, "["},
+        {LBRACKET, "["},
+        {STRING, "delta"},
+        {COMMA, ","},
+        {STRING, "phi"},
+        {RBRACKET, "]"},
+        {COMMA, ","},
+        {LBRACKET, "["},
+        {INT, "3"},
+        {RBRACKET, "]"},
+        {RBRACKET, "]"},
         {IDENT, "user"},
         {ASSIGN, "="},
         {LBRACE, "{"},
@@ -36,9 +50,9 @@ func TestNextToken(t *testing.T) {
         {ASSIGN, "="},
         {STRING, "john"},
         {COMMA, ","},
-        {IDENT, "pass"},
+        {IDENT, "age"},
         {ASSIGN, "="},
-        {STRING, "1234"},
+        {INT, "28"},
         {RBRACE, "}"},
         {EOF, ""},
     }
