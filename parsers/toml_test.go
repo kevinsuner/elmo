@@ -65,7 +65,6 @@ func TestNextToken(t *testing.T) {
 
     for i, tc := range tests {
         tok := l.NextToken()
-        t.Log(tok)
 
         if tok.Type != tc.expectedType {
             t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
@@ -90,9 +89,7 @@ age = 28
     p := NewParser(l)
 
     program := p.ParseProgram()
-    if program == nil {
-        t.Fatalf("ParseProgram() returned nil")
-    }
+    checkParserErrors(t, p)
 
     if len(program.Statements) != 4 {
         t.Fatalf("program.Statements does not contain 4 statements. got=%d",
@@ -114,6 +111,20 @@ age = 28
             return
         }
     }
+}
+
+func checkParserErrors(t *testing.T, p *Parser) {
+    errors := p.Errors()
+    if len(errors) == 0 {
+        return
+    }
+
+    t.Errorf("parser has %d errors", len(errors))
+    for _, msg := range errors {
+        t.Errorf("parser error: %q", msg)
+    }
+
+    t.FailNow()
 }
 
 func testStatement(t *testing.T, s Statement, name string) bool {
