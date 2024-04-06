@@ -1,6 +1,9 @@
 package parsers
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 type TokenType string
 
@@ -149,6 +152,7 @@ func (l *Lexer) readChar() {
 
 type Node interface {
     TokenLiteral() string
+    String() string
 }
 
 type Statement interface {
@@ -173,6 +177,15 @@ func (p *Program) TokenLiteral() string {
     }
 }
 
+func (p *Program) String() string {
+    var out bytes.Buffer
+    for _, s := range p.Statements {
+        out.WriteString(s.String())
+    }
+
+    return out.String()
+}
+
 type Stmt struct {
     Token Token
     Name *Ident
@@ -181,6 +194,32 @@ type Stmt struct {
 
 func (s *Stmt) statementNode() {}
 func (s *Stmt) TokenLiteral() string { return s.Token.Literal }
+func (s *Stmt) String() string {
+    var out bytes.Buffer
+    out.WriteString(s.TokenLiteral())
+    out.WriteString(" = ")
+
+    if s.Value != nil {
+        out.WriteString(s.Value.String())
+    }
+
+    return out.String()
+}
+
+type ExprStmt struct {
+    Token Token
+    Expression Expression
+}
+
+func (e *ExprStmt) statementNode() {}
+func (e *ExprStmt) TokenLiteral() string { return e.Token.Literal }
+func (e *ExprStmt) String() string {
+    if e.Expression != nil {
+        return e.Expression.String()
+    }
+
+    return ""
+}
 
 type Ident struct {
     Token Token
@@ -189,6 +228,7 @@ type Ident struct {
 
 func (i *Ident) expressionNode() {}
 func (i *Ident) TokenLiteral() string { return i.Token.Literal }
+func (i *Ident) String() string { return i.Value }
 
 type Parser struct {
     l       *Lexer
