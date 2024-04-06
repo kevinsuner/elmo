@@ -152,3 +152,25 @@ func testStatement(t *testing.T, s Statement, name string) bool {
 
     return true
 }
+
+func TestString(t *testing.T) {
+    program := &Program{
+        Statements: []Statement{
+            &Stmt{
+                Token: Token{Type: IDENT, Literal: "title"},
+                Name: &Ident{
+                    Token: Token{Type: IDENT, Literal: "title"},
+                    Value: "title",
+                },
+                Value: &Ident{
+                    Token: Token{Type: STRING, Literal: "TOML Example"},
+                    Value: "TOML Example",
+                },
+            },
+        },
+    }
+
+    if program.String() != `title = TOML Example` {
+        t.Errorf("program.String() wrong. got=%q", program.String())
+    }
+}
