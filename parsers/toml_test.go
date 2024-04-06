@@ -18,9 +18,11 @@ func TestNextToken(t *testing.T) {
         {IDENT, "title"},
         {ASSIGN, "="},
         {STRING, "TOML Example"},
+        {EOL, ""},
         {IDENT, "port"},
         {ASSIGN, "="},
         {INT, "8000"},
+        {EOL, ""},
         {IDENT, "ports"},
         {ASSIGN, "="},
         {LBRACKET, "["},
@@ -30,6 +32,7 @@ func TestNextToken(t *testing.T) {
         {COMMA, ","},
         {INT, "8003"},
         {RBRACKET, "]"},
+        {EOL, ""},
         {IDENT, "data"},
         {ASSIGN, "="},
         {LBRACKET, "["},
@@ -43,6 +46,7 @@ func TestNextToken(t *testing.T) {
         {INT, "3"},
         {RBRACKET, "]"},
         {RBRACKET, "]"},
+        {EOL, ""},
         {IDENT, "user"},
         {ASSIGN, "="},
         {LBRACE, "{"},
@@ -57,7 +61,7 @@ func TestNextToken(t *testing.T) {
         {EOF, ""},
     }
 
-    l := New(input)
+    l := NewLexer(input)
 
     for i, tc := range tests {
         tok := l.NextToken()
@@ -73,4 +77,67 @@ func TestNextToken(t *testing.T) {
                 i, tc.expectedLiteral, tok.Literal)
         }
     }
+}
+
+func TestStatements(t *testing.T) {
+    input := `title = "TOML Example"
+port = 8000
+name = "John"
+age = 28
+    `
+
+    l := NewLexer(input)
+    p := NewParser(l)
+
+    program := p.ParseProgram()
+    if program == nil {
+        t.Fatalf("ParseProgram() returned nil")
+    }
+
+    if len(program.Statements) != 4 {
+        t.Fatalf("program.Statements does not contain 4 statements. got=%d",
+            len(program.Statements))
+    }
+
+    tests := []struct{
+        expectedIdentifier string
+    }{
+        {"title"},
+        {"port"},
+        {"name"},
+        {"age"},
+    }
+
+    for i, tc := range tests {
+        stmt := program.Statements[i]
+        if !testStatement(t, stmt, tc.expectedIdentifier) {
+            return
+        }
+    }
+}
+
+func testStatement(t *testing.T, s Statement, name string) bool {
+    if len(s.TokenLiteral()) == 0 {
+        t.Error("s.TokenLiteral of zero length")
+        return false
+    }
+
+    stmt, ok := s.(*Stmt)
+    if !ok {
+        t.Errorf("s not *Stmt. got=%T", s)
+        return false
+    }
+
+    if stmt.Name.Value != name {
+        t.Errorf("stmt.Name.Value not '%s'. got=%s", name, stmt.Name.Value)
+        return false
+    }
+
+    if stmt.Name.TokenLiteral() != name {
+        t.Errorf("stmt.Name.TokenLiteral() not '%s'. got=%s",
+            name, stmt.Name.TokenLiteral())
+        return false
+    }
+
+    return true
 }
