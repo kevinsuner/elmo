@@ -9,6 +9,7 @@ type Token struct {
 
 const (
     ILLEGAL = "ILLEGAL"
+    EOL     = "EOL"
     EOF     = "EOF"
 
     // Identifiers + literals
@@ -34,7 +35,7 @@ type Lexer struct {
     ch          byte // current char under examination
 }
 
-func New(input string) *Lexer {
+func NewLexer(input string) *Lexer {
     l := &Lexer{input: input}
     l.readChar()
     return l
@@ -61,6 +62,9 @@ func (l *Lexer) NextToken() Token {
     case '"':
         tok.Type = STRING
         tok.Literal = l.readStr()
+    case '\n':
+        tok.Literal = ""
+        tok.Type = EOL
     case 0:
         tok.Literal = ""
         tok.Type = EOF
@@ -83,7 +87,7 @@ func (l *Lexer) NextToken() Token {
 }
 
 func (l *Lexer) skipWhitespace() {
-    for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+    for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' {
         l.readChar()
     }
 }
@@ -141,3 +145,120 @@ func (l *Lexer) readChar() {
     l.readPos += 1
 }
 
+type Node interface {
+    TokenLiteral() string
+}
+
+type Statement interface {
+    Node
+    statementNode()
+}
+
+type Expression interface {
+    Node
+    expressionNode()
+}
+
+type Program struct {
+    Statements []Statement
+}
+
+func (p *Program) TokenLiteral() string {
+    if len(p.Statements) > 0 {
+        return p.Statements[0].TokenLiteral()
+    } else {
+        return ""
+    }
+}
+
+type Stmt struct {
+    Token Token
+    Name *Ident
+    Value Expression
+}
+
+func (s *Stmt) statementNode() {}
+func (s *Stmt) TokenLiteral() string { return s.Token.Literal }
+
+type Ident struct {
+    Token Token
+    Value string
+}
+
+func (i *Ident) expressionNode() {}
+func (i *Ident) TokenLiteral() string { return i.Token.Literal }
+
+type Parser struct {
+    l *Lexer
+
+    curToken    Token
+    peekToken   Token
+}
+
+func NewParser(l *Lexer) *Parser {
+    p := &Parser{l: l}
+    p.nextToken()
+    p.nextToken()
+    return p
+}
+
+func (p *Parser) nextToken() {
+    p.curToken = p.peekToken
+    p.peekToken = p.l.NextToken()
+}
+
+func (p *Parser) ParseProgram() *Program {
+    program := &Program{}
+    program.Statements = []Statement{}
+
+    for p.curToken.Type != EOF {
+        stmt := p.parseStatement()
+        if stmt != nil {
+            program.Statements = append(program.Statements, stmt)
+        }
+        p.nextToken()
+    }
+
+    return program
+}
+
+func (p *Parser) parseStatement() Statement {
+    switch p.curToken.Type {
+    case IDENT:
+        return p.parseStmt()
+    default:
+        return nil 
+    }
+}
+
+func (p *Parser) parseStmt() *Stmt {
+    stmt := &Stmt{Token: p.curToken}
+    stmt.Name = &Ident{Token: p.curToken, Value: p.curToken.Literal}
+
+    if !p.expectPeek(ASSIGN) {
+        return nil 
+    }
+
+    for !p.curTokenIs(EOL) {
+        p.nextToken()
+    }
+
+    return stmt
+}
+
+func (p *Parser) curTokenIs(t TokenType) bool {
+    return p.curToken.Type == t
+} 
+
+func (p *Parser) peekTokenIs(t TokenType) bool {
+    return p.peekToken.Type == t
+}
+
+func (p *Parser) expectPeek(t TokenType) bool {
+    if p.peekTokenIs(t) {
+        p.nextToken()
+        return true
+    } else {
+        return false
+    }
+}
