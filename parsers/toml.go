@@ -17,6 +17,10 @@ const (
     EOL     = "EOL"
     EOF     = "EOF"
 
+    // Keywords
+    TRUE    = "TRUE"
+    FALSE   = "FALSE"
+
     // Identifiers + literals
     IDENT   = "IDENT"
     INT     = "INT"
@@ -32,6 +36,11 @@ const (
     LBRACKET    = "["
     RBRACKET    = "]"
 )
+
+var keywords = map[string]TokenType{
+    "true": TRUE,
+    "false": FALSE,
+}
 
 type Lexer struct {
     input       string
@@ -75,8 +84,8 @@ func (l *Lexer) NextToken() Token {
         tok.Type = EOF
     default:
         if isLetter(l.ch) {
-            tok.Type = IDENT
             tok.Literal = l.readIdent()
+            tok.Type = lookupIdent(tok.Literal)
             return tok
         } else if isDigit(l.ch) {
             tok.Type = INT
@@ -89,6 +98,14 @@ func (l *Lexer) NextToken() Token {
 
     l.readChar()
     return tok
+}
+
+func lookupIdent(ident string) TokenType {
+    if tok, ok := keywords[ident]; ok {
+        return tok
+    }
+
+    return IDENT
 }
 
 func (l *Lexer) skipWhitespace() {
