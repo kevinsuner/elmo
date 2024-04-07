@@ -7,6 +7,7 @@ import (
 func TestNextToken(t *testing.T) {
     input := `title = "TOML Example"
     port = 8000
+    debug = true
     ports = [ 8001, 8002, 8003 ]
     data = [ ["delta", "phi"],  [3] ]
     user = { name = "john", age = 28 }`
@@ -22,6 +23,10 @@ func TestNextToken(t *testing.T) {
         {IDENT, "port"},
         {ASSIGN, "="},
         {INT, "8000"},
+        {EOL, ""},
+        {IDENT, "debug"},
+        {ASSIGN, "="},
+        {TRUE, "true"},
         {EOL, ""},
         {IDENT, "ports"},
         {ASSIGN, "="},
@@ -80,6 +85,7 @@ func TestNextToken(t *testing.T) {
 
 func TestStatements(t *testing.T) {
     input := `title = "TOML Example"
+debug = true
 port = 8000
 name = "John"
 age = 28
@@ -91,7 +97,7 @@ age = 28
     program := p.ParseProgram()
     checkParserErrors(t, p)
 
-    if len(program.Statements) != 4 {
+    if len(program.Statements) != 5 {
         t.Fatalf("program.Statements does not contain 4 statements. got=%d",
             len(program.Statements))
     }
@@ -100,6 +106,7 @@ age = 28
         expectedIdentifier string
     }{
         {"title"},
+        {"debug"},
         {"port"},
         {"name"},
         {"age"},
