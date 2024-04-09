@@ -7,25 +7,25 @@ type token struct {
 }
 
 const (
-    ILLEGAL = "ILLEGAL"
-    EOF     = "EOF"
+    ILLEGAL     = "ILLEGAL"
+    EOF         = "EOF"
 
     // Keywords
-    TRUE    = "TRUE"
-    FALSE   = "FALSE"
+    TRUE        = "TRUE"
+    FALSE       = "FALSE"
 
     // Identifiers
-    IDENT   = "IDENT"
+    IDENT       = "IDENT"
 
     // Literals
-    INT     = "INT"
-    STRING  = "STRING"
+    INT         = "INT"
+    STRING      = "STRING"
 
     // Operators
-    ASSIGN  = "="
+    ASSIGN      = "="
 
     // Delimiters
-    EOL     = "EOL"
+    SEMICOLON   = ";"
 )
 
 var keywords = map[string]tokenKind{
@@ -40,7 +40,7 @@ type lexer struct {
     char            byte    // current character under examination
 }
 
-func newLexer(input string) *lexer {
+func NewLexer(input string) *lexer {
     l := &lexer{input: input}
     l.readCharacter()
     return l
@@ -64,12 +64,11 @@ func (l *lexer) nextToken() token {
     switch l.char {
     case '=':
         tok = newToken(ASSIGN, l.char)
+    case ';':
+        tok = newToken(SEMICOLON, l.char)
     case '"':
         tok.kind = STRING
         tok.literal = l.readString()
-    case '\n':
-        tok.kind = EOL
-        tok.literal = ""
     case 0:
         tok.kind = EOF
         tok.literal = ""
@@ -112,7 +111,7 @@ func lookupIdentifier(identifier string) tokenKind {
 }
 
 func (l *lexer) eatWhitespace() {
-    for l.char == ' ' || l.char == '\t' || l.char == '\r' {
+    for l.char == ' ' || l.char == '\t' || l.char == '\n' || l.char == '\r' {
         l.readCharacter()
     }
 }

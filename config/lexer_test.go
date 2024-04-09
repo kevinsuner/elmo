@@ -3,9 +3,9 @@ package config
 import "testing"
 
 func Test_nextToken(t *testing.T) {
-    input := `title = "Elmo"
-port = 8080
-debug = true`
+    input := `title = "Elmo";
+port = 8080;
+debug = true;`
 
     tests := []struct{
         expectedKind    tokenKind
@@ -14,18 +14,19 @@ debug = true`
         {IDENT, "title"},
         {ASSIGN, "="},
         {STRING, "Elmo"},
-        {EOL, ""},
+        {SEMICOLON, ";"},
         {IDENT, "port"},
         {ASSIGN, "="},
         {INT, "8080"},
-        {EOL, ""},
+        {SEMICOLON, ";"},
         {IDENT, "debug"},
         {ASSIGN, "="},
         {TRUE, "true"},
+        {SEMICOLON, ";"},
         {EOF, ""},
     }
 
-    l := newLexer(input)
+    l := NewLexer(input)
     for i, tc := range tests {
         tok := l.nextToken()
         if tok.kind != tc.expectedKind {
