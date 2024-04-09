@@ -17,11 +17,12 @@ type parser struct {
 
 type prefixParseFn func() expression
 
-func newParser(lexer *lexer) *parser {
+func NewParser(lexer *lexer) *parser {
     p := &parser{lexer: lexer, errs: make([]error, 0)}
     
     p.prefixParseFns = make(map[tokenKind]prefixParseFn)
     p.registerPrefix(INT, p.parseIntegerLiteral)
+    p.registerPrefix(STRING, p.parseStringLiteral)
     p.registerPrefix(TRUE, p.parseBoolean)
     p.registerPrefix(FALSE, p.parseBoolean)
     
@@ -43,9 +44,9 @@ func (p *parser) nextToken() {
     p.peekToken = p.lexer.nextToken()
 }
 
-func (p *parser) parseProgram() *program {
+func (p *parser) ParseProgram() *program {
     program := &program{}
-    program.statements = make([]statement, 0)
+    program.statements = []statement{}
 
     for p.currentToken.kind != EOF {
         stmt := p.parseStatement()
@@ -59,16 +60,12 @@ func (p *parser) parseProgram() *program {
 }
 
 func (p *parser) parseStatement() statement {
-    if !(p.currentToken.kind == EOL) {
-        switch p.currentToken.kind {
-        case IDENT:
-            return p.parseStmt()
-        default:
-            return p.parseExpressionStmt()
-        }
+    switch p.currentToken.kind {
+    case IDENT:
+        return p.parseStmt()
+    default:
+        return nil
     }
-
-    return nil
 }
 
 func (p *parser) parseStmt() *stmt {
@@ -79,18 +76,10 @@ func (p *parser) parseStmt() *stmt {
         return nil
     }
 
-    if !p.currentTokenIs(EOL) {
-        p.nextToken()
-    }
+    p.nextToken()
+    stmt.val = p.parseExpression()
 
-    return stmt
-}
-
-func (p *parser) parseExpressionStmt() *expressionStmt {
-    stmt := &expressionStmt{token: p.currentToken}
-    stmt.expression = p.parseExpression()
-
-    if p.peekTokenIs(EOL) {
+    for !p.currentTokenIs(SEMICOLON) {
         p.nextToken()
     }
 
@@ -116,6 +105,10 @@ func (p *parser) parseIntegerLiteral() expression {
 
     literal.val = value
     return literal
+}
+
+func (p *parser) parseStringLiteral() expression {
+    return &stringLiteral{token: p.currentToken, val: p.currentToken.literal}
 }
 
 func (p *parser) parseBoolean() expression {
