@@ -13,6 +13,10 @@ debug = true`
     program := p.parseProgram()
     checkParserErrors(t, p)
 
+    for _, stmt := range program.statements {
+        t.Log(stmt)
+    }
+
     if len(program.statements) != 3 {
         t.Fatalf("program.statements does not contain 3 statements, got=%d",
             len(program.statements))
@@ -72,4 +76,36 @@ func testStatement(t *testing.T, s statement, name string) bool {
     }
 
     return true
+}
+
+func Test_integerLiteralExpression(t *testing.T) {
+    l := newLexer("5")
+    p := newParser(l)
+    program := p.parseProgram()
+    checkParserErrors(t, p)
+
+    if len(program.statements) != 1 {
+        t.Fatalf("program has not enough statements. got=%d",
+            len(program.statements))
+    }
+
+    stmt, ok := program.statements[0].(*expressionStmt)
+    if !ok {
+        t.Fatalf("program.statements[0] is not expressionStmt. got=%T", 
+            program.statements[0])
+    }
+
+    literal, ok := stmt.expression.(*integerLiteral)
+    if !ok {
+        t.Fatalf("exp not *integerLiteral. got=%T", stmt.expression)
+    }
+
+    if literal.val != 5 {
+        t.Errorf("literal.val not %d. got=%d", 5, literal.val)
+    }
+
+    if literal.tokenLiteral() != "5" {
+        t.Errorf("literal.tokenLiteral not %s. got=%s", "5",
+            literal.tokenLiteral())
+    }
 }

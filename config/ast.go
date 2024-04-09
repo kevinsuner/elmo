@@ -72,7 +72,7 @@ type expressionStmt struct {
     expression expression
 }
 
-func (e *expressionStmt) expressionNode() {}
+func (e *expressionStmt) statementNode() {}
 func (e *expressionStmt) tokenLiteral() string { return e.token.literal }
 func (e *expressionStmt) value() string {
     if e.expression != nil {
@@ -81,3 +81,12 @@ func (e *expressionStmt) value() string {
 
     return ""
 }
+
+type integerLiteral struct {
+    token token
+    val int64
+}
+
+func (i *integerLiteral) expressionNode() {}
+func (i *integerLiteral) tokenLiteral() string { return i.token.literal }
+func (i *integerLiteral) value() string { return i.token.literal }
