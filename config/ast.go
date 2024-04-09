@@ -67,21 +67,6 @@ func (s *stmt) value() string {
     return out.String()
 }
 
-type expressionStmt struct {
-    token token
-    expression expression
-}
-
-func (e *expressionStmt) statementNode() {}
-func (e *expressionStmt) tokenLiteral() string { return e.token.literal }
-func (e *expressionStmt) value() string {
-    if e.expression != nil {
-        return e.expression.value()
-    }
-
-    return ""
-}
-
 type integerLiteral struct {
     token token
     val int64
@@ -90,6 +75,15 @@ type integerLiteral struct {
 func (i *integerLiteral) expressionNode() {}
 func (i *integerLiteral) tokenLiteral() string { return i.token.literal }
 func (i *integerLiteral) value() string { return i.token.literal }
+
+type stringLiteral struct {
+    token token
+    val string
+}
+
+func (s *stringLiteral) expressionNode() {}
+func (s *stringLiteral) tokenLiteral() string { return s.token.literal }
+func (s *stringLiteral) value() string { return s.token.literal }
 
 type boolean struct {
     token token
