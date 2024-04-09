@@ -90,3 +90,12 @@ type integerLiteral struct {
 func (i *integerLiteral) expressionNode() {}
 func (i *integerLiteral) tokenLiteral() string { return i.token.literal }
 func (i *integerLiteral) value() string { return i.token.literal }
+
+type boolean struct {
+    token token
+    val bool
+}
+
+func (b *boolean) expressionNode() {}
+func (b *boolean) tokenLiteral() string { return b.token.literal }
+func (b *boolean) value() string { return b.token.literal }

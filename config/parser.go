@@ -22,6 +22,8 @@ func newParser(lexer *lexer) *parser {
     
     p.prefixParseFns = make(map[tokenKind]prefixParseFn)
     p.registerPrefix(INT, p.parseIntegerLiteral)
+    p.registerPrefix(TRUE, p.parseBoolean)
+    p.registerPrefix(FALSE, p.parseBoolean)
     
     p.nextToken()
     p.nextToken()
@@ -114,6 +116,10 @@ func (p *parser) parseIntegerLiteral() expression {
 
     literal.val = value
     return literal
+}
+
+func (p *parser) parseBoolean() expression {
+    return &boolean{token: p.currentToken, val: p.currentTokenIs(TRUE)}
 }
 
 func (p *parser) expectPeek(kind tokenKind) bool {
