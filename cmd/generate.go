@@ -2,15 +2,13 @@ package cmd
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark-meta"
 	"github.com/yuin/goldmark/extension"
@@ -19,21 +17,32 @@ import (
 	"golang.org/x/text/language"
 )
 
-func init() {
-    rootCmd.AddCommand(generateCmd)
-}
+const (
+    ContentDir      string = "content"
+    PublicDir       string = "public"
+    ThemesDir       string = "themes"
+    DefaultTheme    string = "https://github.com/kevinsuner/elmo-thumbalina.git"
+)
 
-var generateCmd = &cobra.Command{
-    Use: "generate",
-    Short: "Generate a static web page using Markdown files",
-    Long: `Transforms the Markdown files found in the content directory
+var (
+    contentPostsDir string = fmt.Sprintf("%s/posts", ContentDir)
+    publicPostsDir  string = fmt.Sprintf("%s/posts", PublicDir)
+    themeDir        string
+    partialsDir     string
+)
+
+func init() {
+    commander["generate"] = Command{
+        Flags: flag.NewFlagSet("generate", flag.ExitOnError),
+        Use: `Transforms the Markdown files found in the content directory
 to HTML, and embeds the resulting output into a Golang
 html/template.
 
 It uses the files provided by the theme (which is set in the
 configuration file <elmo.toml>), in the html/template parsing
 and execution phase.`,
-    Run: generate,
+        Run: generate,
+    }
 }
 
 func createDir(path string) error {
@@ -151,7 +160,7 @@ func getPosts() ([]post, error) {
     for _, file := range files {
         if !file.IsDir() {
             filename := strings.Split(file.Name(), ".")[0]
-            lang, err := language.Parse(viper.GetString("language"))
+            lang, err := language.Parse("en")
             if err != nil {
                 return nil, err
             }
@@ -278,38 +287,42 @@ func createFiles(dir string, templates map[string]tpl) error {
     return nil
 }
 
-func generate(cmd *cobra.Command, args []string) {
-    ts := time.Now()
+func generate(params map[string]string) {
+    themeDir = fmt.Sprintf("%s/%s", ThemesDir, params["theme"])
+    partialsDir = fmt.Sprintf("%s/partials", themeDir)
+
     if err := createDir(publicPostsDir); err != nil {
-        logger.Fatal("createDir", "error", err.Error())
+        logger.Error("createDir", "error", err.Error())
+        os.Exit(1)
     }
 
     contents := make(map[string]content)
     err := parseMarkdown(ContentDir, ".md", contents)
     if err != nil {
-        logger.Fatal("parseMarkdown", "error", err.Error())
+        logger.Error("parseMarkdown", "error", err.Error())
+        os.Exit(1)
     }
 
     err = parseMarkdown(contentPostsDir, ".md", contents)
     if err != nil {
-        logger.Fatal("parseMarkdown", "error", err.Error())
+        logger.Error("parseMarkdown", "error", err.Error())
+        os.Exit(1)
     }
 
     templates := make(map[string]tpl)
     err = parseTemplates(themeDir, ".tmpl", templates, contents)
     if err != nil {
-        logger.Fatal("parseTemplates", "error", err.Error())
+        logger.Error("parseTemplates", "error", err.Error())
+        os.Exit(1)
     }
 
     if err = parsePosts(templates, contents); err != nil {
-        logger.Fatal("parsePosts", "error", err.Error())
+        logger.Error("parsePosts", "error", err.Error())
+        os.Exit(1)
     }
 
     if err = createFiles(PublicDir, templates); err != nil {
-        logger.Fatal("createFiles", "error", err.Error())
+        logger.Error("createFiles", "error", err.Error())
+        os.Exit(1)
     }
-
-    logger.Info("Done!", "took", fmt.Sprintf("%dms", time.Since(ts).Milliseconds()))
-    logger.Info("Files parsed", "total", len(contents))
-    logger.Info("Files generated", "total", len(templates))
 }
